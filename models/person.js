@@ -6,7 +6,6 @@ mongoose.set('strictQuery', false)
 const url = process.env.MONGODB_URI
 // console.log('url: ',url)
 
-
 mongoose.connect(url)
     .then(result => {
         console.log('connected to MongoDB')
@@ -29,26 +28,4 @@ personSchema.set('toJSON', {
 })
 
 module.exports = mongoose.model('Person', personSchema)
-
-
-// if(pname && pnumber){
-//     const person = new Person({
-//         name: pname,
-//         number: pnumber,
-//     })
-    
-//     person.save().then(result => {
-//         console.log('person saved!')
-//         mongoose.connection.close()
-//     })
-// }
-// else{
-//     console.log('phonebook:')
-//     Person.find({}).then(result => {
-//         result.forEach(person => {
-//             console.log(person.name, person.number)
-//         })
-//         mongoose.connection.close()
-//     })
-// }
 

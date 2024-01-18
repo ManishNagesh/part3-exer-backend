@@ -1,8 +1,9 @@
 const express = require('express')
 const app = express()
-const uuid = require('uuid')
 const morgan = require('morgan')
 const cors = require('cors')
+require('dotenv').config()
+const Person = require('./models/person')
 
 
 app.use(express.json())
@@ -15,31 +16,12 @@ morgan.token('body', req => {
 
 app.use(morgan(':method :url :response-time ms :body'))
 
-let persons = [
-    { 
-        "id": 1,
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": 2,
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": 3,
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": 4,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
+let persons = []
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(notes => {
+        response.json(notes)
+      })
 })
 
 app.get('/info',(request, response) => {
@@ -76,7 +58,7 @@ const generateId =() => {
 app.post('/api/persons', (request, response) => {
     const body = request.body
     
-    const nameFind = persons.find(person => person.name === body.name)
+    // const nameFind = persons.find(person => person.name === body.name)
     if(!body.name){
         return response.status(400).json({
             error: 'please include name'
@@ -85,20 +67,16 @@ app.post('/api/persons', (request, response) => {
         return response.status(400).json({
             error: 'please include number'
         })
-    } else if(nameFind){
-        return response.status(400).json({
-            error: 'name must be unique'
-        })
     }
     
-    const person = {
+    const person = new Person({
         name: body.name,
-        number: Number(body.number),
-        id: generateId(),
-    }
+        number: body.number
+    })
     
-    persons = persons.concat(person)
-    response.json(persons)
+    person.save().then(savedPerson => {
+        response.json(savedPerson)
+      })
 })
 
 
