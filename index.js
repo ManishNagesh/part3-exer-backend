@@ -1,5 +1,6 @@
 const express = require('express')
 const app = express()
+const axios = require('axios')
 const morgan = require('morgan')
 const cors = require('cors')
 require('dotenv').config()
@@ -19,41 +20,56 @@ app.use(morgan(':method :url :response-time ms :body'))
 let persons = []
 
 app.get('/api/persons', (request, response) => {
-    Person.find({}).then(notes => {
-        response.json(notes)
+    Person.find({}).then(person => {
+        response.json(person)
       })
 })
 
-app.get('/info',(request, response) => {
-    const time = new Date()
-    const length = persons.length
-    response.send(`<p>Phonebook has info for ${length} people</p>
-    <p>${time}</p>`)
-})
+app.get('/info',async(request, response) => {
+    try {
+        // Make a GET request to the /api/persons endpoint
+        const personsResponse = await axios.get(`http://localhost:${process.env.PORT}/api/persons`);
 
-app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const person = persons.find(person => person.id === id)
-    
-    if(person){
-        response.send(person)
-    } else{
-        response.status(404).end()
+        const length = personsResponse.data.length;
+        const time = new Date();
+        
+        response.send(`<p>Phonebook has info for ${length} people</p>
+        <p>${time}</p>`);
+    } catch (error) {
+        console.error(error);
+        response.status(500).send('Internal Server Error');
     }
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    // console.log('id',id)
-    persons = persons.filter(person => person.id !== id)
-    
-    response.status(204).end()
+app.get('/api/persons/:id', (request, response, next) => {
+    Person.findById(request.params.id)
+    .then(person => response.send(person))
+    .catch(error => next(error))
 })
 
-const generateId =() => {
-    const id = Math.floor(Math.random() * 100) + 1;
-    return id
-}
+app.delete('/api/persons/:id', (request, response, next) => {
+    Person.findByIdAndDelete(request.params.id)
+    .then(result => {
+        response.status(204).end()
+      })
+      .catch(error => next(error))
+})
+
+app.put('/api/persons/:id', (request, response, next) => {
+    const body = request.body
+  
+    const person = {
+      name: body.name,
+      number: body.number,
+    }
+  
+    Person.findByIdAndUpdate(request.params.id, person, { new: true })
+      .then(updatedPerson => {
+        response.json(updatedPerson)
+      })
+      .catch(error => next(error))
+  })
+
 
 app.post('/api/persons', (request, response) => {
     const body = request.body
@@ -79,8 +95,21 @@ app.post('/api/persons', (request, response) => {
       })
 })
 
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+  
+    if (error.name === 'CastError') {
+      return response.status(400).send({ error: 'malformatted id' })
+    } 
+  
+    next(error)
+}
+  
+// handler of requests with result to errors
+app.use(errorHandler)
 
-const PORT = 3001
+
+const PORT = process.env.PORT
 app.listen(PORT, ()=> {
     console.log(`Server running on port ${PORT}`)
 })
