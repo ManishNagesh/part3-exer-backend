@@ -1,0 +1,10 @@
+PUT http://localhost:3003/api/blogs/65b4d4fd48fc9eda28ea69f7
+Content-Type: application/json
+
+{
+    "title": "pappu bhel centre",
+    "author": "pappu",
+    "url": "hbjh",
+    "likes": 3
+
+}
